@@ -1,0 +1,259 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SHARE IN AIR — design system
+   A dark, frosted-glass interface. Deep charcoal atmosphere, warm amber→coral
+   glow as the single accent, hairline-light glass surfaces that feel like panes
+   suspended in air. Type pairs a characterful grotesque display with a humanist
+   body and a technical mono for codes & sizes.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Fonts — wired to next/font CSS variables in layout.tsx */
+  --font-display: var(--font-bricolage), "Trebuchet MS", sans-serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Atmosphere */
+  --color-void: #08080a;
+  --color-ink: #0b0b0e;
+  --color-coal: #131318;
+  --color-slate: #1c1c22;
+
+  /* Text */
+  --color-haze: #f4f3f6; /* primary text */
+  --color-mist: #b9b8c2; /* secondary text */
+  --color-fog: #807f8b; /* tertiary / labels */
+  --color-ash: #57565f; /* faint */
+
+  /* Warm accent — the only saturated colour in the system */
+  --color-ember-50: #fff3e8;
+  --color-ember-200: #ffd0a3;
+  --color-ember-400: #ff9d4d;
+  --color-ember: #ff7a1a; /* primary accent */
+  --color-ember-600: #ff5e3a;
+  --color-flare: #ff4d3d; /* hottest stop, used in gradients */
+
+  /* Cool counter-tint, only for background depth + secondary glows */
+  --color-tide: #4a6cf7;
+  --color-aqua: #38e0c8;
+
+  /* Semantic */
+  --color-ok: #3ddc97;
+  --color-warn: #ffc24b;
+  --color-bad: #ff5c6c;
+
+  /* Radii */
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-2xl: 2.75rem;
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Animations */
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 3.2s var(--ease-out-expo) infinite;
+  --animate-spin-slow: spin 22s linear infinite;
+  --animate-spin-slower: spin 40s linear infinite;
+  --animate-shimmer: shimmer 2.2s linear infinite;
+  --animate-rise: rise 0.6s var(--ease-out-expo) both;
+  --animate-scan: scan 2.6s ease-in-out infinite;
+  --animate-breathe: breathe 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  33% { transform: translateY(-9px) translateX(4px); }
+  66% { transform: translateY(5px) translateX(-4px); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.82); opacity: 0.7; }
+  70% { opacity: 0; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes shimmer {
+  0% { background-position: -180% 0; }
+  100% { background-position: 180% 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes scan {
+  0%, 100% { transform: translateY(-110%); opacity: 0; }
+  10%, 90% { opacity: 0.55; }
+  50% { transform: translateY(110%); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.05); }
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+* { border-color: color-mix(in oklab, white 8%, transparent); }
+
+html { color-scheme: dark; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-haze);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+::selection { background: color-mix(in oklab, var(--color-ember) 40%, transparent); color: #fff; }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, white 14%, transparent) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, white 12%, transparent);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, white 22%, transparent); background-clip: content-box; }
+
+:focus-visible {
+  outline: 2px solid var(--color-ember);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Display headings get the characterful grotesque + tight tracking */
+.font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+/* ── Glass surfaces ───────────────────────────────────────────────────────── */
+/* A single, consistent recipe so every pane reads like the same material. */
+.glass {
+  position: relative;
+  background:
+    linear-gradient(155deg, color-mix(in oklab, white 7%, transparent), color-mix(in oklab, white 1.5%, transparent));
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid color-mix(in oklab, white 11%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, white 14%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, black 30%, transparent),
+    0 24px 60px -28px rgba(0, 0, 0, 0.85);
+}
+/* A brighter pane for primary cards / sheets */
+.glass-strong {
+  background:
+    linear-gradient(155deg, color-mix(in oklab, white 11%, transparent), color-mix(in oklab, white 3%, transparent));
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  border: 1px solid color-mix(in oklab, white 14%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, white 20%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, black 35%, transparent),
+    0 36px 90px -32px rgba(0, 0, 0, 0.9);
+}
+/* Inset / recessed surface (e.g. a slider track, input well) */
+.glass-well {
+  background: color-mix(in oklab, black 38%, transparent);
+  border: 1px solid color-mix(in oklab, white 7%, transparent);
+  box-shadow: inset 0 2px 8px -2px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 color-mix(in oklab, white 4%, transparent);
+}
+/* Hairline divider that catches a touch of light */
+.hairline { border-top: 1px solid color-mix(in oklab, white 9%, transparent); }
+
+/* A specular sheen overlay you can drop into any glass card */
+.sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 80% at 12% -10%, color-mix(in oklab, white 16%, transparent), transparent 55%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ── Accent treatments ────────────────────────────────────────────────────── */
+.text-ember { color: var(--color-ember); }
+.bg-ember-gradient { background: linear-gradient(135deg, var(--color-ember-400), var(--color-ember) 45%, var(--color-flare)); }
+.text-ember-gradient {
+  background: linear-gradient(120deg, var(--color-ember-200), var(--color-ember) 55%, var(--color-flare));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.glow-ember {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-ember) 55%, transparent),
+    0 10px 30px -8px color-mix(in oklab, var(--color-ember-600) 60%, transparent),
+    0 0 40px -6px color-mix(in oklab, var(--color-ember) 45%, transparent);
+}
+.ring-glow { box-shadow: 0 0 26px -2px color-mix(in oklab, var(--color-ember) 55%, transparent); }
+
+/* Primary action button */
+.btn-ember {
+  background: linear-gradient(135deg, var(--color-ember-400), var(--color-ember) 50%, var(--color-ember-600));
+  color: #1a0d04;
+  font-weight: 650;
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, white 45%, transparent),
+    0 8px 24px -8px color-mix(in oklab, var(--color-ember-600) 75%, transparent);
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.25s ease, filter 0.2s ease;
+}
+.btn-ember:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: inset 0 1px 0 0 color-mix(in oklab, white 50%, transparent), 0 14px 34px -8px color-mix(in oklab, var(--color-ember-600) 85%, transparent); }
+.btn-ember:active { transform: translateY(0) scale(0.985); }
+
+/* Quiet ghost button on glass */
+.btn-ghost {
+  background: color-mix(in oklab, white 5%, transparent);
+  border: 1px solid color-mix(in oklab, white 10%, transparent);
+  color: var(--color-mist);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.18s var(--ease-spring);
+}
+.btn-ghost:hover { background: color-mix(in oklab, white 9%, transparent); color: var(--color-haze); border-color: color-mix(in oklab, white 16%, transparent); }
+.btn-ghost:active { transform: scale(0.98); }
+
+/* Pill chips (status / metadata) */
+.chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.7rem; border-radius: 99px;
+  font-size: 0.78rem; font-weight: 550; line-height: 1;
+  background: color-mix(in oklab, white 6%, transparent);
+  border: 1px solid color-mix(in oklab, white 9%, transparent);
+  color: var(--color-mist);
+}
+
+/* Animated progress / loading shimmer */
+.shimmer {
+  background-image: linear-gradient(100deg, transparent 20%, color-mix(in oklab, white 16%, transparent) 50%, transparent 80%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* Noise grain overlay (very subtle, breaks up the gradients) */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Hide scrollbar but keep scroll (horizontal chip rows) */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
