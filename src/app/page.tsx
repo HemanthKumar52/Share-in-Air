@@ -40,13 +40,13 @@ function Hero() {
         Peer-to-peer, nothing uploaded.
       </p>
 
-      <div className="no-scrollbar mt-4 flex items-center justify-center gap-2 overflow-x-auto">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         {CAPABILITIES.map(({ icon: Icon, label, kind }) => (
           <button
             key={label}
             type="button"
             onClick={() => quickShare(kind)}
-            className="chip shrink-0 cursor-pointer transition hover:bg-white/10 hover:text-haze active:scale-95"
+            className="chip cursor-pointer transition hover:bg-white/10 hover:text-haze active:scale-95"
           >
             <Icon className="size-3.5 text-ember" />
             {label}

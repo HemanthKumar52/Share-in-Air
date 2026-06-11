@@ -35,5 +35,8 @@ yarn-error.log*
 # local build/install logs
 *.log
 
+# local visual-test screenshot output
+/shots
+
 # vercel
 .vercel
