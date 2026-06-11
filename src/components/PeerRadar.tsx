@@ -16,6 +16,7 @@ export function PeerRadar() {
   const peers = useShareStore((s) => s.peers);
   const ready = useShareStore((s) => s.ready);
   const status = useShareStore((s) => s.status);
+  const mode = useShareStore((s) => s.mode);
   const { selectPeer } = useAir();
   const openRoom = useUiStore((s) => s.setRoomModalOpen);
   const { ref, width, height } = useElementSize<HTMLDivElement>();
@@ -96,18 +97,29 @@ export function PeerRadar() {
         >
           <div className="mx-auto mb-4 flex items-center justify-center gap-2 text-xs text-fog">
             <Radar className="size-4 animate-[var(--animate-spin-slow)] text-ember" />
-            {status === "ready" ? "Listening for devices on your network…" : "Connecting…"}
+            {status === "ready" ? "Listening for devices…" : "Connecting…"}
           </div>
-          <p className="text-sm text-mist">
-            Open <span className="font-semibold text-haze">Share in Air</span> on another device on
-            the same WiFi and it&apos;ll appear here.
-          </p>
+          {mode === "local" ? (
+            <p className="text-sm text-mist">
+              <span className="chip mb-3 inline-flex">Demo mode</span>
+              <br />
+              No signaling backend is set, so devices can&apos;t find each other across the network
+              yet. Open this page in a <span className="font-semibold text-haze">second browser tab</span>{" "}
+              to try the full flow now — for real phone&nbsp;↔&nbsp;laptop sharing, add a Supabase key.
+            </p>
+          ) : (
+            <p className="text-sm text-mist">
+              Open <span className="font-semibold text-haze">Share in Air</span> on another device on
+              the same WiFi and it&apos;ll appear here. To share quickly, tap a capability above once a
+              device shows up.
+            </p>
+          )}
           <button
             onClick={() => openRoom(true)}
             className="btn-ghost mx-auto mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium"
           >
             <QrCode className="size-4" />
-            Different network? Use a room code
+            {mode === "local" ? "Show room code / QR" : "Different network? Use a room code"}
           </button>
         </motion.div>
       ) : null}

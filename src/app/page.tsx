@@ -1,7 +1,7 @@
 "use client";
 
 import { MonitorUp, Camera, ImageUp, Type, Github, ShieldCheck } from "lucide-react";
-import { AirProvider } from "@/components/AirProvider";
+import { AirProvider, useAir, type QuickShareKind } from "@/components/AirProvider";
 import { TopBar } from "@/components/TopBar";
 import { PeerRadar } from "@/components/PeerRadar";
 import { OutgoingShareBar } from "@/components/OutgoingShareBar";
@@ -12,15 +12,16 @@ import { RoomModal } from "@/components/RoomModal";
 import { FileDropOverlay } from "@/components/FileDropOverlay";
 import { useShareStore } from "@/store/useShareStore";
 
-const CAPABILITIES = [
-  { icon: MonitorUp, label: "Screen" },
-  { icon: Camera, label: "Camera" },
-  { icon: ImageUp, label: "Photos & files" },
-  { icon: Type, label: "Text" },
+const CAPABILITIES: { icon: typeof MonitorUp; label: string; kind: QuickShareKind }[] = [
+  { icon: MonitorUp, label: "Screen", kind: "screen" },
+  { icon: Camera, label: "Camera", kind: "camera" },
+  { icon: ImageUp, label: "Photos & files", kind: "files" },
+  { icon: Type, label: "Text", kind: "text" },
 ];
 
 function Hero() {
   const peerCount = useShareStore((s) => s.peers.length);
+  const { quickShare } = useAir();
   return (
     <div className="mt-5 text-center sm:mt-8">
       <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight text-haze sm:text-4xl">
@@ -40,11 +41,16 @@ function Hero() {
       </p>
 
       <div className="no-scrollbar mt-4 flex items-center justify-center gap-2 overflow-x-auto">
-        {CAPABILITIES.map(({ icon: Icon, label }) => (
-          <span key={label} className="chip shrink-0">
+        {CAPABILITIES.map(({ icon: Icon, label, kind }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => quickShare(kind)}
+            className="chip shrink-0 cursor-pointer transition hover:bg-white/10 hover:text-haze active:scale-95"
+          >
             <Icon className="size-3.5 text-ember" />
             {label}
-          </span>
+          </button>
         ))}
       </div>
     </div>

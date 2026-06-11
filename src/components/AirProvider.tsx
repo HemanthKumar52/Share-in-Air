@@ -14,6 +14,9 @@ import { PeerHub } from "@/lib/webrtc";
 import { toast } from "@/lib/toast";
 import type { HubEvent, MediaKind, PeerIdentity, TransferState } from "@/lib/types";
 import { mediaKey, useShareStore } from "@/store/useShareStore";
+import { useUiStore } from "@/store/useUiStore";
+
+export type QuickShareKind = "screen" | "camera" | "files" | "text";
 
 export interface AirActions {
   selectPeer: (peerId: string | null) => void;
@@ -22,6 +25,8 @@ export interface AirActions {
   stopOutgoing: () => void;
   sendFiles: (peerId: string, files: File[] | FileList) => Promise<void>;
   sendText: (peerId: string, text: string) => Promise<void>;
+  /** Entry point from the hero chips: routes by how many devices are connected. */
+  quickShare: (kind: QuickShareKind) => void;
   createRoom: () => void;
   joinRoom: (code: string) => void;
   leaveRoom: () => void;
@@ -276,6 +281,48 @@ export function AirProvider({ children }: { children: ReactNode }) {
           await hub.sendText(peerId, text.trim());
         } catch {
           toast.error("That device isn't ready yet", { body: "Wait for it to connect, then retry." });
+        }
+      },
+      quickShare: (kind) => {
+        const state = useShareStore.getState();
+        const peers = state.peers;
+        if (peers.length === 0) {
+          // Nothing to share to yet — explain and open the connect/QR panel.
+          toast.info("Connect a device first", {
+            body:
+              state.mode === "local"
+                ? "Open this page in a second browser tab to try it — or add a Supabase key for real phone↔laptop sharing."
+                : "Open this link on another device on the same WiFi, then tap it here.",
+          });
+          useUiStore.getState().setRoomModalOpen(true);
+          return;
+        }
+        if (peers.length > 1) {
+          toast.info("Tap the device you want to share with", {
+            body: "Choose one of the devices around the centre.",
+          });
+          return;
+        }
+        const peer = peers[0];
+        if (kind === "screen") void startShare(peer.id, "screen");
+        else if (kind === "camera") void startShare(peer.id, "camera");
+        else if (kind === "text") useShareStore.getState().selectPeer(peer.id);
+        else if (kind === "files") {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.multiple = true;
+          input.onchange = () => {
+            if (input.files?.length) {
+              getHub()
+                ?.sendFiles(peer.id, Array.from(input.files))
+                .catch(() =>
+                  toast.error("That device isn't ready yet", {
+                    body: "Wait for it to connect, then retry.",
+                  }),
+                );
+            }
+          };
+          input.click();
         }
       },
       createRoom: () => {
