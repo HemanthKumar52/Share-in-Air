@@ -41,9 +41,9 @@ npm run dev
 # open http://localhost:3000
 ```
 
-**Zero-config demo:** without any environment variables the app runs in *local demo mode* — a `BroadcastChannel` transport links multiple **tabs on the same machine** so you can try the full flow (discovery, screen share, file/text transfer) immediately.
+**Zero-config — works across devices out of the box:** with no environment variables, the app uses a free **public MQTT relay** (no signup) as the signaling switchboard, so two devices on the same WiFi auto-discover and connect immediately. Only tiny SDP/ICE messages touch the relay — screens and files still flow strictly peer-to-peer.
 
-**Real cross-device (same WiFi):** create a free Supabase project (or self-host), then copy `.env.example` to `.env.local` and fill in:
+**Optional private relay (Supabase):** to keep signaling inside your own project instead of a public broker, create a free Supabase project (or self-host), then copy `.env.example` to `.env.local` and fill in:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co

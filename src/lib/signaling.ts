@@ -57,7 +57,7 @@ function isValidSignal(raw: unknown): raw is SignalMessage {
        for instant local demos.
    ──────────────────────────────────────────────────────────────────────────── */
 
-export type TransportMode = "supabase" | "local";
+export type TransportMode = "supabase" | "public" | "local";
 
 interface RoomEvents {
   onRoster: (room: string, peers: PresenceMeta[]) => void;
@@ -218,6 +218,153 @@ function localRoom(room: string, identity: PeerIdentity, ev: RoomEvents): RoomCh
   };
 }
 
+/* ── Public MQTT relay room (zero-config cross-device default) ─────────────── */
+/* When no Supabase project is configured we still want real cross-device
+   sharing. A free public MQTT broker (reached over secure WebSocket, so it works
+   on HTTPS/Vercel) acts as the rendezvous: presence + signaling ride pub/sub
+   topics namespaced by room. Only tiny SDP/ICE messages pass through it — media
+   and files still flow strictly peer-to-peer. */
+
+// Public, no-signup broker. Secure WebSocket endpoint (required on HTTPS).
+const MQTT_URL = "wss://broker.emqx.io:8084/mqtt";
+
+type MqttClient = {
+  on: (e: string, cb: (...a: unknown[]) => void) => void;
+  removeListener: (e: string, cb: (...a: unknown[]) => void) => void;
+  subscribe: (t: string[], o: unknown, cb: () => void) => void;
+  unsubscribe: (t: string[]) => void;
+  publish: (t: string, m: string) => void;
+};
+
+let mqttClientPromise: Promise<MqttClient | null> | null = null;
+
+function getMqttClient(): Promise<MqttClient | null> {
+  if (!mqttClientPromise) {
+    mqttClientPromise = (async () => {
+      try {
+        const mod = await import("mqtt");
+        const mqtt = (mod as unknown as { default?: { connect: (u: string, o: unknown) => MqttClient } }).default ?? (mod as unknown as { connect: (u: string, o: unknown) => MqttClient });
+        const client = mqtt.connect(MQTT_URL, {
+          clientId: `sia_${Math.random().toString(16).slice(2, 10)}`,
+          clean: true,
+          keepalive: 30,
+          reconnectPeriod: 3000,
+          connectTimeout: 8000,
+          protocolVersion: 4,
+        });
+        await new Promise<void>((resolve) => {
+          let done = false;
+          const finish = () => {
+            if (!done) {
+              done = true;
+              resolve();
+            }
+          };
+          client.on("connect", finish);
+          client.on("error", finish);
+          setTimeout(finish, 9000); // never block the app indefinitely
+        });
+        return client;
+      } catch (err) {
+        console.error("[air] MQTT relay unavailable", err);
+        return null;
+      }
+    })();
+  }
+  return mqttClientPromise;
+}
+
+function mqttRoom(room: string, identity: PeerIdentity, ev: RoomEvents): RoomChannel {
+  let meta: PresenceMeta = { ...identity, joinedAt: Date.now() };
+  const presenceTopic = `sia/${room}/p`;
+  const signalTopic = `sia/${room}/s`;
+  const seen = new Map<string, { meta: PresenceMeta; at: number }>();
+  let client: MqttClient | null = null;
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
+
+  const emit = () => {
+    const now = Date.now();
+    const peers: PresenceMeta[] = [];
+    for (const [id, rec] of seen) {
+      if (now - rec.at > EXPIRE_MS) {
+        seen.delete(id);
+        continue;
+      }
+      peers.push(rec.meta);
+    }
+    peers.push(meta); // self — Transport filters it out
+    ev.onRoster(room, peers);
+  };
+
+  const announce = () =>
+    client?.publish(presenceTopic, JSON.stringify({ kind: "announce", meta }));
+
+  const onMessage = (...args: unknown[]) => {
+    const topic = args[0] as string;
+    const payload = args[1] as { toString(): string };
+    if (topic !== presenceTopic && topic !== signalTopic) return;
+    let data: LocalWire | { kind: "hello"; from: string };
+    try {
+      data = JSON.parse(payload.toString());
+    } catch {
+      return;
+    }
+    if (topic === presenceTopic) {
+      if (data.kind === "announce") {
+        const m = sanitizePresence(data.meta);
+        if (m && m.id !== identity.id) {
+          seen.set(m.id, { meta: m, at: Date.now() });
+          emit();
+        }
+      } else if (data.kind === "leave") {
+        if (data.from && seen.delete(data.from)) emit();
+      } else if (data.kind === "hello") {
+        if (data.from !== identity.id) announce();
+      }
+    } else if (topic === signalTopic) {
+      if (data.kind === "signal" && isValidSignal(data.msg) && data.msg.to === identity.id) {
+        ev.onSignal(data.msg);
+      }
+    }
+  };
+
+  const ready = (async () => {
+    client = await getMqttClient();
+    if (!client) return; // relay unreachable — app still loads, just no peers
+    client.on("message", onMessage);
+    await new Promise<void>((res) =>
+      client!.subscribe([presenceTopic, signalTopic], { qos: 0 }, () => res()),
+    );
+    announce();
+    client.publish(presenceTopic, JSON.stringify({ kind: "hello", from: identity.id }));
+    heartbeat = setInterval(() => {
+      announce();
+      emit();
+    }, HEARTBEAT_MS);
+  })();
+
+  return {
+    name: room,
+    ready,
+    send: (msg) => client?.publish(signalTopic, JSON.stringify({ kind: "signal", msg })),
+    retrack: (next) => {
+      meta = next;
+      announce();
+      emit();
+    },
+    close: () => {
+      if (heartbeat) clearInterval(heartbeat);
+      try {
+        client?.publish(presenceTopic, JSON.stringify({ kind: "leave", from: identity.id }));
+        client?.unsubscribe([presenceTopic, signalTopic]);
+        client?.removeListener("message", onMessage);
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+}
+
 /* ── Transport: merges rooms into one roster and routes signals ────────────── */
 
 export class Transport {
@@ -233,6 +380,10 @@ export class Transport {
     if (isSupabaseConfigured()) {
       this.mode = "supabase";
       this.factory = supabaseRoom;
+    } else if (typeof WebSocket !== "undefined") {
+      // Default: zero-config public relay so cross-device sharing just works.
+      this.mode = "public";
+      this.factory = mqttRoom;
     } else {
       this.mode = "local";
       this.factory = localRoom;
