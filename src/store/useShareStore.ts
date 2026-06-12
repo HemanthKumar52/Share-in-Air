@@ -15,8 +15,7 @@ export function mediaKey(peerId: string, kind: MediaKind): string {
   return `${peerId}:${kind}`;
 }
 
-interface OutgoingShare {
-  peerId: string;
+interface Broadcast {
   kind: MediaKind;
   stream: MediaStream;
 }
@@ -36,7 +35,8 @@ interface ShareStore {
   snippets: Snippet[];
   remoteMedia: Record<string, RemoteMedia>;
   viewerKey: string | null;
-  outgoing: OutgoingShare | null;
+  broadcast: Broadcast | null;
+  watchers: number;
 
   setIdentity: (id: PeerIdentity) => void;
   setMode: (mode: TransportMode) => void;
@@ -55,7 +55,8 @@ interface ShareStore {
   setRemoteMedia: (key: string, media: RemoteMedia) => void;
   removeRemoteMedia: (key: string) => void;
   setViewer: (key: string | null) => void;
-  setOutgoing: (share: OutgoingShare | null) => void;
+  setBroadcast: (b: Broadcast | null) => void;
+  setWatchers: (n: number) => void;
 
   reset: () => void;
 }
@@ -75,7 +76,8 @@ export const useShareStore = create<ShareStore>((set) => ({
   snippets: [],
   remoteMedia: {},
   viewerKey: null,
-  outgoing: null,
+  broadcast: null,
+  watchers: 0,
 
   setIdentity: (identity) => set({ identity }),
   setMode: (mode) => set({ mode }),
@@ -111,7 +113,8 @@ export const useShareStore = create<ShareStore>((set) => ({
       };
     }),
   setViewer: (viewerKey) => set({ viewerKey }),
-  setOutgoing: (outgoing) => set({ outgoing }),
+  setBroadcast: (broadcast) => set({ broadcast }),
+  setWatchers: (watchers) => set({ watchers }),
 
   reset: () =>
     set({
@@ -122,6 +125,7 @@ export const useShareStore = create<ShareStore>((set) => ({
       snippets: [],
       remoteMedia: {},
       viewerKey: null,
-      outgoing: null,
+      broadcast: null,
+      watchers: 0,
     }),
 }));

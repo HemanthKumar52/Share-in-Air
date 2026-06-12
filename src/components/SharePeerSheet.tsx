@@ -2,16 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  Camera,
-  Eye,
-  FileUp,
-  ImageUp,
-  MonitorUp,
-  Radio,
-  Send,
-  X,
-} from "lucide-react";
+import { Eye, FileUp, ImageUp, Send, X } from "lucide-react";
 import { useShareStore, mediaKey } from "@/store/useShareStore";
 import { useAir } from "./AirProvider";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
@@ -53,9 +44,8 @@ export function SharePeerSheet() {
   const snippets = useShareStore((s) => s.snippets);
   const transfers = useShareStore((s) => s.transfers);
   const remoteMedia = useShareStore((s) => s.remoteMedia);
-  const outgoing = useShareStore((s) => s.outgoing);
 
-  const { selectPeer, shareScreen, shareCamera, sendFiles, sendText, openViewer } = useAir();
+  const { selectPeer, watchPeer, sendFiles, sendText } = useAir();
   const [text, setText] = useState("");
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -70,10 +60,12 @@ export function SharePeerSheet() {
 
   useEscapeKey(open, () => selectPeer(null));
 
-  const incomingScreen = remoteMedia[mediaKey(peerId ?? "", "screen")];
-  const incomingCamera = remoteMedia[mediaKey(peerId ?? "", "camera")];
-  const incoming = incomingScreen ?? incomingCamera;
-  const sharingToThisPeer = outgoing && outgoing.peerId === peerId;
+  // Whether this peer is presenting (from presence), and whether we're already
+  // receiving it. Either lets us show a "Watch" button.
+  const watching = Boolean(
+    remoteMedia[mediaKey(peerId ?? "", "screen")] ?? remoteMedia[mediaKey(peerId ?? "", "camera")],
+  );
+  const presentingKind = peer?.presenting ?? null;
 
   const recent = useMemo(
     () =>
@@ -171,49 +163,32 @@ export function SharePeerSheet() {
               </button>
             </div>
 
-            {/* live status banners */}
-            {incoming ? (
+            {/* live: this peer is presenting — tap to watch */}
+            {presentingKind ? (
               <button
-                onClick={() => openViewer(mediaKey(peerId, incoming.kind))}
-                className="glow-ember mt-4 flex w-full items-center gap-2 rounded-2xl bg-white/[0.04] px-4 py-3 text-left"
+                onClick={() => watchPeer(peerId, presentingKind)}
+                className="glow-ember mt-4 flex w-full items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3 text-left"
               >
-                <Eye className="size-4 text-ember" />
-                <span className="flex-1 text-sm font-medium text-haze">
-                  {peer!.name} is sharing their {incoming.kind}
+                <span className="relative flex size-2.5 shrink-0">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--color-bad)] opacity-75" />
+                  <span className="relative inline-flex size-2.5 rounded-full bg-[var(--color-bad)]" />
                 </span>
-                <span className="chip">Watch</span>
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold text-haze">
+                    {peer!.name} is presenting their {presentingKind}
+                  </span>
+                  <span className="block text-xs text-fog">
+                    {watching ? "You're watching" : "Tap to watch live"}
+                  </span>
+                </span>
+                <span className="chip">
+                  <Eye className="size-3.5" /> Watch
+                </span>
               </button>
             ) : null}
 
-            {sharingToThisPeer ? (
-              <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white/[0.04] px-4 py-3">
-                <Radio className="size-4 animate-pulse text-ember" />
-                <span className="flex-1 text-sm text-mist">
-                  Sharing your {outgoing!.kind} to {peer!.name}
-                </span>
-              </div>
-            ) : null}
-
-            {/* action grid */}
+            {/* directed actions: send files/photos to this device */}
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <ActionTile
-                icon={<MonitorUp className="size-5" />}
-                label="Share screen"
-                hint="Live mirror your screen"
-                onClick={() => {
-                  void shareScreen(peerId);
-                  selectPeer(null);
-                }}
-              />
-              <ActionTile
-                icon={<Camera className="size-5" />}
-                label="Share camera"
-                hint="Stream your webcam"
-                onClick={() => {
-                  void shareCamera(peerId);
-                  selectPeer(null);
-                }}
-              />
               <ActionTile
                 icon={<ImageUp className="size-5" />}
                 label="Send photos"

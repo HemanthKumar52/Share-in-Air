@@ -14,7 +14,7 @@ export function ScreenStage() {
     const m = s.viewerKey ? s.remoteMedia[s.viewerKey] : undefined;
     return m ? (s.peers.find((p) => p.id === m.peerId)?.name ?? "Device") : "";
   });
-  const { openViewer } = useAir();
+  const { closeViewer } = useAir();
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -24,7 +24,7 @@ export function ScreenStage() {
   const open = Boolean(viewerKey && media);
 
   // Escape closes the viewer — unless we're fullscreen, where Escape first exits it.
-  useEscapeKey(open && !fullscreen, () => openViewer(null));
+  useEscapeKey(open && !fullscreen, () => closeViewer());
 
   useEffect(() => {
     const video = videoRef.current;
@@ -120,7 +120,7 @@ export function ScreenStage() {
                   {fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
                 </button>
                 <button
-                  onClick={() => openViewer(null)}
+                  onClick={() => closeViewer()}
                   aria-label="Close viewer"
                   className="btn-ghost grid size-9 place-items-center rounded-full"
                 >

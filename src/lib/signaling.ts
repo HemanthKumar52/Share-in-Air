@@ -1,4 +1,4 @@
-import type { DeviceKind, PeerIdentity, PresenceMeta, SignalMessage } from "./types";
+import type { DeviceKind, MediaKind, PeerIdentity, PresenceMeta, SignalMessage } from "./types";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -27,7 +27,9 @@ function sanitizePresence(raw: unknown): PresenceMeta | null {
       : "unknown";
   const joinedAt =
     typeof r.joinedAt === "number" && Number.isFinite(r.joinedAt) ? r.joinedAt : Date.now();
-  return { id: r.id, name, color, emoji, device, joinedAt };
+  const presenting =
+    r.presenting === "screen" || r.presenting === "camera" ? (r.presenting as MediaKind) : null;
+  return { id: r.id, name, color, emoji, device, joinedAt, presenting };
 }
 
 function isValidSignal(raw: unknown): raw is SignalMessage {
@@ -428,11 +430,27 @@ export class Transport {
     this.emitRoster();
   }
 
+  private presenting: MediaKind | null = null;
+
+  private currentMeta(): PresenceMeta {
+    return { ...this.identity, presenting: this.presenting, joinedAt: Date.now() };
+  }
+
+  private broadcastMeta(): void {
+    const meta = this.currentMeta();
+    for (const ch of this.rooms.values()) ch.retrack(meta);
+  }
+
   /** Re-publish presence after the local identity's cosmetic half changes. */
   retrack(identity: PeerIdentity): void {
     this.identity = identity;
-    const meta: PresenceMeta = { ...identity, joinedAt: Date.now() };
-    for (const ch of this.rooms.values()) ch.retrack(meta);
+    this.broadcastMeta();
+  }
+
+  /** Announce (or clear) that this device is presenting live media. */
+  setPresenting(kind: MediaKind | null): void {
+    this.presenting = kind;
+    this.broadcastMeta();
   }
 
   send(msg: SignalMessage): void {

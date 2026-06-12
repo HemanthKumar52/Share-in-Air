@@ -20,17 +20,20 @@ export type QuickShareKind = "screen" | "camera" | "files" | "text";
 
 export interface AirActions {
   selectPeer: (peerId: string | null) => void;
-  shareScreen: (peerId: string) => Promise<void>;
-  shareCamera: (peerId: string) => Promise<void>;
-  stopOutgoing: () => void;
+  /** Start presenting your screen/camera to the room — no pairing required. */
+  startBroadcast: (kind: MediaKind) => Promise<void>;
+  stopBroadcast: () => void;
+  /** Opt in to watch a presenting peer's live media. */
+  watchPeer: (peerId: string, kind: MediaKind) => void;
+  /** Close the live viewer (and tell the presenter we stopped watching). */
+  closeViewer: () => void;
   sendFiles: (peerId: string, files: File[] | FileList) => Promise<void>;
   sendText: (peerId: string, text: string) => Promise<void>;
-  /** Entry point from the hero chips: routes by how many devices are connected. */
+  /** Entry point from the hero buttons: screen/camera present; files/text are directed. */
   quickShare: (kind: QuickShareKind) => void;
   createRoom: () => void;
   joinRoom: (code: string) => void;
   leaveRoom: () => void;
-  openViewer: (key: string | null) => void;
   cancelTransfer: (peerId: string, id: string) => void;
   saveTransfer: (transfer: TransferState) => void;
   rerollIdentity: () => void;
@@ -131,17 +134,20 @@ export function AirProvider({ children }: { children: ReactNode }) {
           break;
         }
         case "remote-media": {
+          // Arrives only because we asked to watch — open the stage.
           const key = mediaKey(event.media.peerId, event.media.kind);
           s.setRemoteMedia(key, event.media);
           s.setViewer(key);
-          toast.accent(`${peerName(event.media.peerId)} is sharing their ${event.media.kind}`, {
-            action: { label: "View", onClick: () => useShareStore.getState().setViewer(key) },
-          });
           break;
         }
         case "remote-media-ended":
           s.removeRemoteMedia(mediaKey(event.peerId, event.kind));
           break;
+        case "viewers": {
+          const b = useShareStore.getState().broadcast;
+          if (b && b.kind === event.kind) s.setWatchers(event.count);
+          break;
+        }
       }
     };
 
@@ -149,10 +155,27 @@ export function AirProvider({ children }: { children: ReactNode }) {
     hubRef.current = hub;
 
     transport.onSignal((msg) => void hub.handleSignal(msg));
+    const presentingSeen = new Set<string>();
     transport.onRoster((peers) => {
       if (disposed) return;
       store().setPeers(peers);
       hub.sync(peers.map((p) => p.id));
+      // Opt-in watch prompt: notify once when a peer starts presenting.
+      const live = new Set<string>();
+      for (const p of peers) {
+        if (p.presenting) {
+          live.add(p.id);
+          if (!presentingSeen.has(p.id)) {
+            const kind = p.presenting;
+            toast.accent(`${p.name} is presenting their ${kind}`, {
+              duration: 9000,
+              action: { label: "Watch", onClick: () => void hub.requestWatch(p.id, kind) },
+            });
+          }
+        }
+      }
+      presentingSeen.clear();
+      for (const id of live) presentingSeen.add(id);
     });
 
     // Join the auto network room (group by hashed public IP), then any ?room= code.
@@ -200,10 +223,19 @@ export function AirProvider({ children }: { children: ReactNode }) {
     const getHub = () => hubRef.current;
     const getTransport = () => transportRef.current;
 
-    const startShare = async (peerId: string, kind: MediaKind) => {
+    const doStopBroadcast = () => {
+      const hub = getHub();
+      const cur = useShareStore.getState().broadcast;
+      if (hub && cur) hub.stopLocalMedia(cur.kind);
+      useShareStore.getState().setBroadcast(null);
+      useShareStore.getState().setWatchers(0);
+      getTransport()?.setPresenting(null);
+    };
+
+    const startBroadcast = async (kind: MediaKind) => {
       const hub = getHub();
       if (!hub) return;
-      if (sharingLock.current) return; // serialize: ignore overlapping share attempts
+      if (sharingLock.current) return; // serialize overlapping attempts
       if (typeof navigator === "undefined" || !navigator.mediaDevices) {
         toast.error("Capture needs a secure (HTTPS) context", {
           body: "Open the deployed https:// site or localhost.",
@@ -223,29 +255,29 @@ export function AirProvider({ children }: { children: ReactNode }) {
                 audio: true,
               });
 
-        // Stop any prior outgoing share first (one live share at a time).
-        const prev = useShareStore.getState().outgoing;
-        if (prev) {
-          hub.stopMedia(prev.peerId, prev.kind);
-        }
+        // One broadcast at a time — replace any prior one.
+        const prev = useShareStore.getState().broadcast;
+        if (prev) hub.stopLocalMedia(prev.kind);
 
-        await hub.shareMedia(peerId, kind, stream);
-        useShareStore.getState().setOutgoing({ peerId, kind, stream });
+        hub.startLocalMedia(kind, stream);
+        useShareStore.getState().setBroadcast({ kind, stream });
+        getTransport()?.setPresenting(kind); // tell the room we're live
 
         // If the user ends capture from the browser's own UI, sync our state.
         for (const track of stream.getVideoTracks()) {
           track.addEventListener("ended", () => {
-            const cur = useShareStore.getState().outgoing;
-            if (cur && cur.stream === stream) {
-              hub.stopMedia(cur.peerId, cur.kind);
-              useShareStore.getState().setOutgoing(null);
-            }
+            const cur = useShareStore.getState().broadcast;
+            if (cur && cur.stream === stream) doStopBroadcast();
           });
         }
-        toast.success(`Sharing your ${kind}`, { body: `to ${peerName(peerId)}` });
+
+        const nearby = useShareStore.getState().peers.length;
+        toast.success(`You're presenting your ${kind}`, {
+          body: nearby > 0 ? "Anyone nearby can tap to watch." : "Share the room code so others can watch.",
+        });
       } catch (err) {
         if ((err as DOMException)?.name === "NotAllowedError") return; // user canceled the picker
-        toast.error(`Couldn't start ${kind} share`, {
+        toast.error(`Couldn't start ${kind}`, {
           body: (err as Error)?.message ?? "Unknown error",
         });
       } finally {
@@ -255,13 +287,24 @@ export function AirProvider({ children }: { children: ReactNode }) {
 
     return {
       selectPeer: (peerId) => useShareStore.getState().selectPeer(peerId),
-      shareScreen: (peerId) => startShare(peerId, "screen"),
-      shareCamera: (peerId) => startShare(peerId, "camera"),
-      stopOutgoing: () => {
+      startBroadcast,
+      stopBroadcast: doStopBroadcast,
+      watchPeer: (peerId, kind) => {
         const hub = getHub();
-        const cur = useShareStore.getState().outgoing;
-        if (hub && cur) hub.stopMedia(cur.peerId, cur.kind);
-        useShareStore.getState().setOutgoing(null);
+        if (!hub) return;
+        hub.requestWatch(peerId, kind).catch(() =>
+          toast.error("Couldn't reach that device", { body: "It may have stopped presenting." }),
+        );
+        toast.info(`Connecting to ${peerName(peerId)}'s ${kind}…`);
+      },
+      closeViewer: () => {
+        const key = useShareStore.getState().viewerKey;
+        if (key) {
+          const [peerId, kind] = key.split(":");
+          getHub()?.stopWatch(peerId, kind as MediaKind);
+          useShareStore.getState().removeRemoteMedia(key);
+        }
+        useShareStore.getState().setViewer(null);
       },
       sendFiles: async (peerId, files) => {
         const hub = getHub();
@@ -284,29 +327,28 @@ export function AirProvider({ children }: { children: ReactNode }) {
         }
       },
       quickShare: (kind) => {
-        const state = useShareStore.getState();
-        const peers = state.peers;
+        // Screen & camera are broadcasts — start immediately, no device required.
+        if (kind === "screen" || kind === "camera") {
+          void startBroadcast(kind);
+          return;
+        }
+        // Files & text are directed to a specific device.
+        const peers = useShareStore.getState().peers;
         if (peers.length === 0) {
-          // Nothing to share to yet — explain and open the connect/QR panel.
-          toast.info("Connect a device first", {
-            body:
-              state.mode === "local"
-                ? "Open this page in a second browser tab to try it — or add a Supabase key for real phone↔laptop sharing."
-                : "Open this link on another device on the same WiFi, then tap it here.",
+          toast.info("No device to send to yet", {
+            body: "Open this link on another device on the same WiFi, or share a room code.",
           });
           useUiStore.getState().setRoomModalOpen(true);
           return;
         }
         if (peers.length > 1) {
-          toast.info("Tap the device you want to share with", {
-            body: "Choose one of the devices around the centre.",
+          toast.info("Tap the device you want to send to", {
+            body: "Choose one of the devices below.",
           });
           return;
         }
         const peer = peers[0];
-        if (kind === "screen") void startShare(peer.id, "screen");
-        else if (kind === "camera") void startShare(peer.id, "camera");
-        else if (kind === "text") useShareStore.getState().selectPeer(peer.id);
+        if (kind === "text") useShareStore.getState().selectPeer(peer.id);
         else if (kind === "files") {
           const input = document.createElement("input");
           input.type = "file";
@@ -357,7 +399,6 @@ export function AirProvider({ children }: { children: ReactNode }) {
         url.searchParams.delete("room");
         window.history.replaceState({}, "", url.toString());
       },
-      openViewer: (key) => useShareStore.getState().setViewer(key),
       cancelTransfer: (peerId, id) => getHub()?.cancelTransfer(peerId, id),
       saveTransfer: (transfer) => downloadTransfer(transfer),
       rerollIdentity: () => {

@@ -12,9 +12,12 @@ export interface PeerIdentity {
   emoji: string; // avatar glyph
 }
 
-/** What we publish to Supabase Presence so others can discover us. */
+/** What we publish to presence so others can discover us. `presenting` is set
+    while this device is broadcasting its screen/camera, so peers can show a LIVE
+    "Watch" affordance without any pairing. */
 export interface PresenceMeta extends PeerIdentity {
   joinedAt: number;
+  presenting?: MediaKind | null;
 }
 
 /* ── Signaling (passes through Supabase Broadcast / the fallback bus) ──────── */
@@ -39,7 +42,10 @@ export type ControlMessage =
   | { t: "hello"; identity: PeerIdentity }
   | { t: "text"; id: string; text: string; at: number }
   | { t: "media-start"; kind: MediaKind; streamId: string; hasAudio: boolean }
-  | { t: "media-stop"; kind: MediaKind };
+  | { t: "media-stop"; kind: MediaKind }
+  // viewer -> presenter: please start/stop sending me your live media
+  | { t: "watch-request"; kind: MediaKind }
+  | { t: "watch-stop"; kind: MediaKind };
 
 /* ── Transfers (UI-facing) ────────────────────────────────────────────────── */
 
@@ -85,4 +91,5 @@ export type HubEvent =
   | { type: "text"; snippet: Snippet }
   | { type: "transfer"; transfer: TransferState }
   | { type: "remote-media"; media: RemoteMedia }
-  | { type: "remote-media-ended"; peerId: string; kind: MediaKind };
+  | { type: "remote-media-ended"; peerId: string; kind: MediaKind }
+  | { type: "viewers"; kind: MediaKind; count: number };

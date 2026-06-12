@@ -53,6 +53,12 @@ export function PeerAvatar({
           }`}
           title={ready ? "Connected" : "Connecting…"}
         />
+        {/* LIVE badge when presenting */}
+        {peer.presenting ? (
+          <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-bad)] px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-md">
+            ● Live
+          </span>
+        ) : null}
       </span>
 
       <span className="flex max-w-full flex-col items-center">

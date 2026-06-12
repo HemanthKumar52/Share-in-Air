@@ -296,6 +296,13 @@ export class PeerHub {
       case "media-stop":
         this.emit({ type: "remote-media-ended", peerId: peer.id, kind: msg.kind });
         break;
+      case "watch-request":
+        // a viewer opted in — start sending them our live broadcast
+        void this.addViewer(peer.id, msg.kind);
+        break;
+      case "watch-stop":
+        this.removeViewer(peer.id, msg.kind);
+        break;
     }
   }
 
@@ -518,9 +525,23 @@ export class PeerHub {
     }
   }
 
-  async shareMedia(peerId: string, kind: MediaKind, stream: MediaStream) {
-    const peer = await this.ensureConnected(peerId);
+  /* ── Broadcast / presenter model ─────────────────────────────────────────
+     The host captures once and holds the stream. Viewers OPT IN by sending a
+     watch-request; only then does the host add the track to that viewer. No
+     pairing required and nobody receives the stream unless they ask. */
+
+  /** Begin presenting: hold the captured stream as the broadcast source. */
+  startLocalMedia(kind: MediaKind, stream: MediaStream) {
+    if (this.localMedia.has(kind)) this.stopLocalMedia(kind);
     this.localMedia.set(kind, stream);
+  }
+
+  /** Send the live stream to one viewer (in response to their watch-request). */
+  private async addViewer(peerId: string, kind: MediaKind) {
+    const stream = this.localMedia.get(kind);
+    if (!stream) return;
+    const peer = await this.ensureConnected(peerId);
+    if (peer.senders.has(kind)) return; // already watching
     const senders: RTCRtpSender[] = [];
     for (const track of stream.getTracks()) {
       senders.push(peer.pc.addTrack(track, stream));
@@ -532,9 +553,10 @@ export class PeerHub {
       streamId: stream.id,
       hasAudio: stream.getAudioTracks().length > 0,
     });
+    this.emit({ type: "viewers", kind, count: this.viewerCount(kind) });
   }
 
-  stopMedia(peerId: string, kind: MediaKind) {
+  private removeViewer(peerId: string, kind: MediaKind) {
     const peer = this.peers.get(peerId);
     if (!peer) return;
     const senders = peer.senders.get(kind);
@@ -549,14 +571,36 @@ export class PeerHub {
       peer.senders.delete(kind);
     }
     this.sendControl(peer, { t: "media-stop", kind });
+    this.emit({ type: "viewers", kind, count: this.viewerCount(kind) });
+  }
 
-    // stop the underlying capture if no peer still uses this kind
-    const stillUsed = [...this.peers.values()].some((p) => p.senders.has(kind));
-    if (!stillUsed) {
-      const stream = this.localMedia.get(kind);
-      stream?.getTracks().forEach((t) => t.stop());
-      this.localMedia.delete(kind);
+  /** How many viewers are currently receiving this broadcast. */
+  viewerCount(kind: MediaKind): number {
+    let n = 0;
+    for (const peer of this.peers.values()) if (peer.senders.has(kind)) n++;
+    return n;
+  }
+
+  /** Stop presenting: drop all viewers and release the capture. */
+  stopLocalMedia(kind: MediaKind) {
+    for (const peer of this.peers.values()) {
+      if (peer.senders.has(kind)) this.removeViewer(peer.id, kind);
     }
+    const stream = this.localMedia.get(kind);
+    stream?.getTracks().forEach((t) => t.stop());
+    this.localMedia.delete(kind);
+  }
+
+  /** Viewer side: ask a presenting peer to start sending us their live media. */
+  async requestWatch(peerId: string, kind: MediaKind) {
+    const peer = await this.ensureConnected(peerId);
+    this.sendControl(peer, { t: "watch-request", kind });
+  }
+
+  /** Viewer side: tell the presenter we've stopped watching. */
+  stopWatch(peerId: string, kind: MediaKind) {
+    const peer = this.peers.get(peerId);
+    if (peer) this.sendControl(peer, { t: "watch-stop", kind });
   }
 
   localStream(kind: MediaKind): MediaStream | undefined {

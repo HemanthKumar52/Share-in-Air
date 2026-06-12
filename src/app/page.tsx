@@ -1,10 +1,10 @@
 "use client";
 
-import { MonitorUp, Camera, ImageUp, Type, Github, ShieldCheck } from "lucide-react";
-import { AirProvider, useAir, type QuickShareKind } from "@/components/AirProvider";
+import { MonitorUp, Camera, Github, ShieldCheck } from "lucide-react";
+import { AirProvider, useAir } from "@/components/AirProvider";
 import { TopBar } from "@/components/TopBar";
 import { PeerRadar } from "@/components/PeerRadar";
-import { OutgoingShareBar } from "@/components/OutgoingShareBar";
+import { PresentingBar } from "@/components/PresentingBar";
 import { SharePeerSheet } from "@/components/SharePeerSheet";
 import { ScreenStage } from "@/components/ScreenStage";
 import { TransfersDock } from "@/components/TransfersDock";
@@ -12,47 +12,45 @@ import { RoomModal } from "@/components/RoomModal";
 import { FileDropOverlay } from "@/components/FileDropOverlay";
 import { useShareStore } from "@/store/useShareStore";
 
-const CAPABILITIES: { icon: typeof MonitorUp; label: string; kind: QuickShareKind }[] = [
-  { icon: MonitorUp, label: "Screen", kind: "screen" },
-  { icon: Camera, label: "Camera", kind: "camera" },
-  { icon: ImageUp, label: "Photos & files", kind: "files" },
-  { icon: Type, label: "Text", kind: "text" },
-];
-
 function Hero() {
   const peerCount = useShareStore((s) => s.peers.length);
+  const broadcasting = useShareStore((s) => Boolean(s.broadcast));
   const { quickShare } = useAir();
   return (
     <div className="mt-5 text-center sm:mt-8">
       <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight text-haze sm:text-4xl">
-        {peerCount > 0 ? (
-          <>
-            Tap a device to <span className="text-ember-gradient">send</span>
-          </>
-        ) : (
-          <>
-            Everything, <span className="text-ember-gradient">through the air</span>
-          </>
-        )}
+        Share your screen, <span className="text-ember-gradient">through the air</span>
       </h1>
       <p className="mx-auto mt-2 max-w-md text-sm text-mist sm:text-base">
-        Live screens, camera, photos, files and text — straight to any device on your WiFi.
-        Peer-to-peer, nothing uploaded.
+        Present to anyone on your WiFi — they just tap to watch. Or send photos, files and text
+        to a device. Peer-to-peer, nothing uploaded.
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        {CAPABILITIES.map(({ icon: Icon, label, kind }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => quickShare(kind)}
-            className="chip cursor-pointer transition hover:bg-white/10 hover:text-haze active:scale-95"
-          >
-            <Icon className="size-3.5 text-ember" />
-            {label}
-          </button>
-        ))}
+      {/* primary broadcast actions — no pairing needed */}
+      <div className="mt-5 flex items-center justify-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => quickShare("screen")}
+          className="btn-ember inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-50"
+          disabled={broadcasting}
+        >
+          <MonitorUp className="size-5" />
+          Share my screen
+        </button>
+        <button
+          type="button"
+          onClick={() => quickShare("camera")}
+          className="btn-ghost inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold"
+        >
+          <Camera className="size-5" />
+          Camera
+        </button>
       </div>
+      <p className="mt-2.5 text-xs text-fog">
+        {peerCount > 0
+          ? "…or tap a device below to send files & text, or watch their screen"
+          : "…or share files & text once a device appears below"}
+      </p>
     </div>
   );
 }
@@ -82,7 +80,7 @@ export default function Page() {
     <AirProvider>
       <main className="relative flex min-h-dvh flex-col">
         <TopBar />
-        <OutgoingShareBar />
+        <PresentingBar />
 
         <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-6">
           <Hero />
