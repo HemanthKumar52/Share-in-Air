@@ -57,6 +57,9 @@ export const metadata: Metadata = {
   category: "technology",
   manifest: "/manifest.webmanifest",
   alternates: { canonical: "/" },
+  verification: {
+    google: "h9S_pS83U2rtyAKiqTO_XwiZhw0j2lXbumoubHQS55s",
+  },
   robots: {
     index: true,
     follow: true,
