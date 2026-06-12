@@ -41,7 +41,7 @@ export function PresentingBar() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ type: "spring", stiffness: 360, damping: 30 }}
-          className="sticky top-[4.25rem] z-30 mx-auto mt-3 w-[min(94vw,30rem)] px-1"
+          className="relative z-30 mx-auto mt-3 w-[min(94vw,30rem)] px-1"
         >
           <div className="glass-strong sheen glow-ember flex items-center gap-3 rounded-2xl p-2">
             <span className="relative grid h-11 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-black">
