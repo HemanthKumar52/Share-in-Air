@@ -6,6 +6,7 @@ import { Eye, FileUp, ImageUp, Send, X } from "lucide-react";
 import { useShareStore, mediaKey } from "@/store/useShareStore";
 import { useAir } from "./AirProvider";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { DeviceIcon, deviceLabel } from "./DeviceIcon";
 import { TransferRow } from "./TransferRow";
 
@@ -26,7 +27,7 @@ function ActionTile({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="glass sheen group flex flex-col items-start gap-2 rounded-2xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0"
+      className="glass sheen group flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0 sm:p-4"
     >
       <span className="bg-ember-gradient grid size-10 place-items-center rounded-xl text-black shadow-lg">
         {icon}
@@ -49,6 +50,7 @@ export function SharePeerSheet() {
   const [text, setText] = useState("");
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Close if the selected peer disappears from the roster.
   useEffect(() => {
@@ -59,6 +61,7 @@ export function SharePeerSheet() {
   const peerId = selectedPeerId as string;
 
   useEscapeKey(open, () => selectPeer(null));
+  useFocusTrap(open, dialogRef);
 
   // Whether this peer is presenting (from presence), and whether we're already
   // receiving it. Either lets us show a "Watch" button.
@@ -109,8 +112,11 @@ export function SharePeerSheet() {
           />
 
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
+            aria-label={peer ? `Share with ${peer.name}` : "Share"}
+            tabIndex={-1}
             initial={{ y: "100%", opacity: 0.6, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: "100%", opacity: 0.6 }}
@@ -125,7 +131,7 @@ export function SharePeerSheet() {
               setDragging(false);
               handleFiles(e.dataTransfer.files);
             }}
-            className={`glass-strong sheen relative z-10 max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:w-[min(94vw,30rem)] sm:rounded-3xl ${
+            className={`glass-strong sheen relative z-10 max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:w-[min(94vw,30rem)] sm:rounded-3xl sm:p-5 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] ${
               dragging ? "ring-2 ring-[var(--color-ember)]" : ""
             }`}
           >
@@ -188,7 +194,7 @@ export function SharePeerSheet() {
             ) : null}
 
             {/* directed actions: send files/photos to this device */}
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
               <ActionTile
                 icon={<ImageUp className="size-5" />}
                 label="Send photos"

@@ -77,7 +77,7 @@ export function ScreenStage() {
     <AnimatePresence>
       {open && media ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 backdrop-blur-md sm:p-8"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-2 backdrop-blur-md sm:p-4 md:p-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -91,7 +91,7 @@ export function ScreenStage() {
             className="glass-strong relative flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl"
           >
             {/* header */}
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
               <div className="flex items-center gap-2">
                 <span className="relative flex size-2.5">
                   <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--color-bad)] opacity-75" />
@@ -107,7 +107,7 @@ export function ScreenStage() {
                   <button
                     onClick={() => setMuted((m) => !m)}
                     aria-label={muted ? "Unmute" : "Mute"}
-                    className="btn-ghost grid size-9 place-items-center rounded-full"
+                    className="btn-ghost grid size-8 place-items-center rounded-full sm:size-9"
                   >
                     {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
                   </button>
@@ -115,14 +115,14 @@ export function ScreenStage() {
                 <button
                   onClick={toggleFullscreen}
                   aria-label="Fullscreen"
-                  className="btn-ghost grid size-9 place-items-center rounded-full"
+                  className="btn-ghost grid size-8 place-items-center rounded-full sm:size-9"
                 >
                   {fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
                 </button>
                 <button
                   onClick={() => closeViewer()}
                   aria-label="Close viewer"
-                  className="btn-ghost grid size-9 place-items-center rounded-full"
+                  className="btn-ghost grid size-8 place-items-center rounded-full sm:size-9"
                 >
                   <X className="size-4" />
                 </button>

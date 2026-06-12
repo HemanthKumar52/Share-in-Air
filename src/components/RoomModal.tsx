@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { Check, Copy, DoorOpen, LogIn, Plus, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { useShareStore } from "@/store/useShareStore";
 import { useUiStore } from "@/store/useUiStore";
 import { useAir } from "./AirProvider";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { toast } from "@/lib/toast";
 
 export function RoomModal() {
@@ -19,8 +20,10 @@ export function RoomModal() {
   const [joinValue, setJoinValue] = useState("");
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEscapeKey(open, () => setOpen(false));
+  useFocusTrap(open, dialogRef);
 
   useEffect(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);
@@ -54,13 +57,16 @@ export function RoomModal() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
+            aria-label="Room sharing"
+            tabIndex={-1}
             initial={{ y: "100%", opacity: 0.6 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0.6 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="glass-strong sheen relative z-10 w-full overflow-hidden rounded-t-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:w-[min(94vw,26rem)] sm:rounded-3xl"
+            className="glass-strong sheen relative z-10 w-full overflow-hidden rounded-t-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:w-[min(94vw,26rem)] sm:rounded-3xl"
           >
             <div aria-hidden className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/15 sm:hidden" />
 
@@ -89,7 +95,7 @@ export function RoomModal() {
                   )}
                 </div>
                 <p className="mt-4 text-xs uppercase tracking-wide text-fog">Room code</p>
-                <p className="font-mono text-4xl font-bold tracking-[0.3em] text-ember-gradient">
+                <p className="font-mono text-3xl font-bold tracking-[0.3em] text-ember-gradient sm:text-4xl">
                   {roomCode}
                 </p>
 

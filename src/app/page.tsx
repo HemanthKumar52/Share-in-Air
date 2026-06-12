@@ -29,7 +29,7 @@ function Hero() {
       </p>
 
       {/* primary broadcast actions — no pairing needed */}
-      <div className="mt-5 flex items-center justify-center gap-2.5">
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
         <button
           type="button"
           onClick={() => quickShare("screen")}
@@ -80,7 +80,7 @@ function Footer() {
 export default function Page() {
   return (
     <AirProvider>
-      <main className="relative flex min-h-dvh flex-col">
+      <main id="main-content" className="relative flex min-h-dvh flex-col">
         <TopBar />
         <PresentingBar />
 

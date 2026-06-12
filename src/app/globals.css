@@ -22,9 +22,9 @@
 
   /* Text */
   --color-haze: #f4f3f6; /* primary text */
-  --color-mist: #b9b8c2; /* secondary text */
-  --color-fog: #807f8b; /* tertiary / labels */
-  --color-ash: #57565f; /* faint */
+  --color-mist: #c2c1cb; /* secondary text */
+  --color-fog: #a0a0b0; /* tertiary / labels — AA contrast on the dark canvas */
+  --color-ash: #7a7a8a; /* faint — kept above AA for small text */
 
   /* Warm accent — the only saturated colour in the system */
   --color-ember-50: #fff3e8;

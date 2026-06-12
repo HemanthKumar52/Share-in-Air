@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Hanken_Grotesk, JetBrains_Mono } from "next/font/g
 import "./globals.css";
 import { BackgroundFX } from "@/components/BackgroundFX";
 import { Toaster } from "@/components/Toaster";
+import { MotionProvider } from "@/components/MotionProvider";
 
 // All three are variable fonts — next/font loads the full weight range, so we
 // don't pin individual weights (Tailwind's font-weight utilities drive them).
@@ -108,6 +109,7 @@ const jsonLd = {
   browserRequirements: "Requires a modern browser with WebRTC",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   isAccessibleForFree: true,
+  inLanguage: "en-US",
   featureList: [
     "Live screen sharing over WiFi",
     "Camera / webcam sharing",
@@ -128,9 +130,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <BackgroundFX />
-        <div className="relative z-10">{children}</div>
-        <Toaster />
+        <a
+          href="#main-content"
+          className="sr-only rounded-lg font-semibold focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:bg-ember focus:px-4 focus:py-2 focus:text-black"
+        >
+          Skip to content
+        </a>
+        <MotionProvider>
+          <BackgroundFX />
+          <div className="relative z-10">{children}</div>
+          <Toaster />
+        </MotionProvider>
       </body>
     </html>
   );

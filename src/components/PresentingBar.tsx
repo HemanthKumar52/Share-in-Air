@@ -43,7 +43,7 @@ export function PresentingBar() {
           transition={{ type: "spring", stiffness: 360, damping: 30 }}
           className="relative z-30 mx-auto mt-3 w-[min(94vw,30rem)] px-1"
         >
-          <div className="glass-strong sheen glow-ember flex items-center gap-3 rounded-2xl p-2">
+          <div className="glass-strong sheen glow-ember flex items-center gap-2 rounded-2xl p-2 sm:gap-3">
             <span className="relative grid h-11 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-black">
               <video ref={videoRef} playsInline muted className="size-full object-cover" />
               <span className="absolute left-1.5 top-1.5 size-1.5 animate-pulse rounded-full bg-[var(--color-bad)]" />
@@ -82,7 +82,7 @@ export function PresentingBar() {
             </button>
             <button
               onClick={stopBroadcast}
-              className="btn-ember inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold"
+              className="btn-ember inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold sm:text-sm"
             >
               <CircleStop className="size-4" />
               Stop

@@ -127,8 +127,8 @@ export function PeerRadar() {
           ) : (
             <p className="text-sm leading-relaxed text-mist">
               Open <span className="font-semibold text-haze">Share in Air</span> on another device on
-              the same WiFi and it&apos;ll appear here. Then tap it — or tap a capability above — to
-              share.
+              the same WiFi and it&apos;ll appear here. Then tap it to send files &amp; text — or use{" "}
+              <span className="font-semibold text-haze">Share my screen</span> above to present.
             </p>
           )}
           <button

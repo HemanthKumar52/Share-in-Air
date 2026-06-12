@@ -44,7 +44,7 @@ export function ImageLightbox() {
     <AnimatePresence>
       {open && current ? (
         <motion.div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-3 backdrop-blur-md sm:p-8"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-2 backdrop-blur-md sm:p-4 md:p-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -96,7 +96,7 @@ export function ImageLightbox() {
                 onClick={() => go(-1)}
                 disabled={index <= 0}
                 aria-label="Previous photo"
-                className="btn-ghost absolute left-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full disabled:opacity-30"
+                className="btn-ghost absolute left-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full disabled:opacity-30 sm:left-3 sm:size-10 md:size-11"
               >
                 <ChevronLeft className="size-5" />
               </button>
@@ -104,7 +104,7 @@ export function ImageLightbox() {
                 onClick={() => go(1)}
                 disabled={index >= gallery.length - 1}
                 aria-label="Next photo"
-                className="btn-ghost absolute right-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full disabled:opacity-30"
+                className="btn-ghost absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full disabled:opacity-30 sm:right-3 sm:size-10 md:size-11"
               >
                 <ChevronRight className="size-5" />
               </button>
