@@ -5,6 +5,7 @@ import { Check, Download, File as FileIcon, Image as ImageIcon, X } from "lucide
 import type { TransferState } from "@/lib/types";
 import { formatBytes, formatPercent } from "@/lib/format";
 import { isImage } from "@/lib/files";
+import { useShareStore } from "@/store/useShareStore";
 import { useAir } from "./AirProvider";
 
 export function TransferRow({
@@ -15,6 +16,7 @@ export function TransferRow({
   compact?: boolean;
 }) {
   const { saveTransfer, cancelTransfer } = useAir();
+  const setPreview = useShareStore((s) => s.setPreview);
   const [thumbBroken, setThumbBroken] = useState(false);
   const percent = formatPercent(transfer.transferred, transfer.size);
   const image = isImage(transfer.mime);
@@ -26,21 +28,25 @@ export function TransferRow({
   return (
     <div className="glass flex items-center gap-3 rounded-xl p-2.5">
       {/* thumb / icon */}
-      <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/5">
-        {showThumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {showThumb ? (
+        <button
+          onClick={() => setPreview(transfer.id)}
+          aria-label={`Preview ${transfer.name}`}
+          className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/5 transition hover:ring-2 hover:ring-white/20"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={transfer.url}
             alt={transfer.name}
             className="size-full object-cover"
             onError={() => setThumbBroken(true)}
           />
-        ) : image ? (
-          <ImageIcon className="size-4 text-fog" />
-        ) : (
-          <FileIcon className="size-4 text-fog" />
-        )}
-      </span>
+        </button>
+      ) : (
+        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/5">
+          {image ? <ImageIcon className="size-4 text-fog" /> : <FileIcon className="size-4 text-fog" />}
+        </span>
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">

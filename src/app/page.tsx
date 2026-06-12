@@ -10,6 +10,7 @@ import { ScreenStage } from "@/components/ScreenStage";
 import { TransfersDock } from "@/components/TransfersDock";
 import { RoomModal } from "@/components/RoomModal";
 import { FileDropOverlay } from "@/components/FileDropOverlay";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { useShareStore } from "@/store/useShareStore";
 
 function Hero() {
@@ -91,6 +92,7 @@ export default function Page() {
         {/* overlays */}
         <SharePeerSheet />
         <ScreenStage />
+        <ImageLightbox />
         <TransfersDock />
         <RoomModal />
         <FileDropOverlay />

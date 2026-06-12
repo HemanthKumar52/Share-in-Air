@@ -11,6 +11,7 @@ import {
 import { createIdentity, rerollCosmetic } from "@/lib/identity";
 import { Transport, hashToRoom } from "@/lib/signaling";
 import { PeerHub } from "@/lib/webrtc";
+import { isImage } from "@/lib/files";
 import { toast } from "@/lib/toast";
 import type { HubEvent, MediaKind, PeerIdentity, TransferState } from "@/lib/types";
 import { mediaKey, useShareStore } from "@/store/useShareStore";
@@ -126,10 +127,15 @@ export function AirProvider({ children }: { children: ReactNode }) {
             }
           }
           if (event.transfer.direction === "recv" && event.transfer.status === "done") {
-            toast.success(`Received ${event.transfer.name}`, {
-              body: `from ${peerName(event.transfer.peerId)}`,
-              action: { label: "Save", onClick: () => downloadTransfer(event.transfer) },
-            });
+            if (isImage(event.transfer.mime) && event.transfer.url) {
+              // Photos open immediately in the lightbox so you can actually see them.
+              s.setPreview(event.transfer.id);
+            } else {
+              toast.success(`Received ${event.transfer.name}`, {
+                body: `from ${peerName(event.transfer.peerId)}`,
+                action: { label: "Save", onClick: () => downloadTransfer(event.transfer) },
+              });
+            }
           }
           break;
         }

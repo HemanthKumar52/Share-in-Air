@@ -37,6 +37,8 @@ interface ShareStore {
   viewerKey: string | null;
   broadcast: Broadcast | null;
   watchers: number;
+  /** transfer id of the received image currently open in the lightbox */
+  previewId: string | null;
 
   setIdentity: (id: PeerIdentity) => void;
   setMode: (mode: TransportMode) => void;
@@ -57,6 +59,7 @@ interface ShareStore {
   setViewer: (key: string | null) => void;
   setBroadcast: (b: Broadcast | null) => void;
   setWatchers: (n: number) => void;
+  setPreview: (id: string | null) => void;
 
   reset: () => void;
 }
@@ -78,6 +81,7 @@ export const useShareStore = create<ShareStore>((set) => ({
   viewerKey: null,
   broadcast: null,
   watchers: 0,
+  previewId: null,
 
   setIdentity: (identity) => set({ identity }),
   setMode: (mode) => set({ mode }),
@@ -115,6 +119,7 @@ export const useShareStore = create<ShareStore>((set) => ({
   setViewer: (viewerKey) => set({ viewerKey }),
   setBroadcast: (broadcast) => set({ broadcast }),
   setWatchers: (watchers) => set({ watchers }),
+  setPreview: (previewId) => set({ previewId }),
 
   reset: () =>
     set({
@@ -127,5 +132,6 @@ export const useShareStore = create<ShareStore>((set) => ({
       viewerKey: null,
       broadcast: null,
       watchers: 0,
+      previewId: null,
     }),
 }));

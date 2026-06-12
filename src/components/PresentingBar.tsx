@@ -37,11 +37,11 @@ export function PresentingBar() {
     <AnimatePresence>
       {broadcast ? (
         <motion.div
-          initial={{ opacity: 0, y: -16 }}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -16 }}
+          exit={{ opacity: 0, y: -12 }}
           transition={{ type: "spring", stiffness: 360, damping: 30 }}
-          className="fixed left-1/2 top-[4.75rem] z-30 w-[min(94vw,30rem)] -translate-x-1/2"
+          className="sticky top-[4.25rem] z-30 mx-auto mt-3 w-[min(94vw,30rem)] px-1"
         >
           <div className="glass-strong sheen glow-ember flex items-center gap-3 rounded-2xl p-2">
             <span className="relative grid h-11 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-black">
