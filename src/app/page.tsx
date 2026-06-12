@@ -11,6 +11,7 @@ import { TransfersDock } from "@/components/TransfersDock";
 import { RoomModal } from "@/components/RoomModal";
 import { FileDropOverlay } from "@/components/FileDropOverlay";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { SeoContent } from "@/components/SeoContent";
 import { useShareStore } from "@/store/useShareStore";
 
 function Hero() {
@@ -86,6 +87,7 @@ export default function Page() {
         <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-6">
           <Hero />
           <PeerRadar />
+          <SeoContent />
           <Footer />
         </section>
 
