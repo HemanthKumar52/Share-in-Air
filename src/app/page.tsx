@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { MonitorUp, Camera, Github, ShieldCheck } from "lucide-react";
 import { AirProvider, useAir } from "@/components/AirProvider";
 import { TopBar } from "@/components/TopBar";
@@ -63,20 +64,34 @@ function Hero() {
 
 function Footer() {
   return (
-    <footer className="mx-auto mt-6 mb-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 text-center text-[11px] text-fog">
-      <span className="inline-flex items-center gap-1.5">
-        <ShieldCheck className="size-3.5 text-[var(--color-ok)]" />
-        End-to-end peer-to-peer — media never touches a server
-      </span>
-      <a
-        href="https://github.com/HemanthKumar52/Share-in-Air"
-        target="_blank"
-        rel="noreferrer noopener"
-        className="inline-flex items-center gap-1.5 text-fog transition-colors hover:text-haze"
+    <footer className="mx-auto mt-8 mb-6 w-full max-w-3xl px-4 text-center">
+      <nav
+        className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-fog"
+        aria-label="Guides"
       >
-        <Github className="size-3.5" />
-        Open source
-      </a>
+        <Link href="/how-to-share-screen-over-wifi" className="transition-colors hover:text-haze">
+          How to share your screen over WiFi
+        </Link>
+        <Link href="/airdrop-for-web" className="transition-colors hover:text-haze">
+          AirDrop for the web &amp; PC
+        </Link>
+        <Link href="/faq" className="transition-colors hover:text-haze">
+          FAQ
+        </Link>
+        <a
+          href="https://github.com/HemanthKumar52/Share-in-Air"
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-1.5 transition-colors hover:text-haze"
+        >
+          <Github className="size-3.5" />
+          Open source
+        </a>
+      </nav>
+      <p className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-ash">
+        <ShieldCheck className="size-3.5 text-[var(--color-ok)]" />
+        End-to-end peer-to-peer — your media never touches a server.
+      </p>
     </footer>
   );
 }
