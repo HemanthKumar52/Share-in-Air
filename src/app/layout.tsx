@@ -23,6 +23,8 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
   display: "swap",
+  // Only used in modals (room code, file sizes) — keep it off the critical path.
+  preload: false,
 });
 
 const SITE_URL = "https://share-in-air.vercel.app";

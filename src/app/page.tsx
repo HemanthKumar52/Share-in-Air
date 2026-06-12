@@ -1,18 +1,22 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { MonitorUp, Camera, Github, ShieldCheck } from "lucide-react";
 import { AirProvider, useAir } from "@/components/AirProvider";
 import { TopBar } from "@/components/TopBar";
 import { PeerRadar } from "@/components/PeerRadar";
-import { PresentingBar } from "@/components/PresentingBar";
-import { SharePeerSheet } from "@/components/SharePeerSheet";
-import { ScreenStage } from "@/components/ScreenStage";
-import { TransfersDock } from "@/components/TransfersDock";
-import { RoomModal } from "@/components/RoomModal";
-import { FileDropOverlay } from "@/components/FileDropOverlay";
-import { ImageLightbox } from "@/components/ImageLightbox";
 import { SeoContent } from "@/components/SeoContent";
 import { useShareStore } from "@/store/useShareStore";
+
+// Interactive overlays aren't needed for first paint or SEO — load them lazily
+// on the client to keep the initial JS bundle small.
+const PresentingBar = dynamic(() => import("@/components/PresentingBar").then((m) => m.PresentingBar), { ssr: false });
+const SharePeerSheet = dynamic(() => import("@/components/SharePeerSheet").then((m) => m.SharePeerSheet), { ssr: false });
+const ScreenStage = dynamic(() => import("@/components/ScreenStage").then((m) => m.ScreenStage), { ssr: false });
+const TransfersDock = dynamic(() => import("@/components/TransfersDock").then((m) => m.TransfersDock), { ssr: false });
+const RoomModal = dynamic(() => import("@/components/RoomModal").then((m) => m.RoomModal), { ssr: false });
+const FileDropOverlay = dynamic(() => import("@/components/FileDropOverlay").then((m) => m.FileDropOverlay), { ssr: false });
+const ImageLightbox = dynamic(() => import("@/components/ImageLightbox").then((m) => m.ImageLightbox), { ssr: false });
 
 function Hero() {
   const peerCount = useShareStore((s) => s.peers.length);
